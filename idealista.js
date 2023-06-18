@@ -20,12 +20,12 @@ function run(search, s_done) {
   }
 
   let ads = PARSER.ads.filter(p => !(
-      isKO(p.novedad !== true, `${p.id} descartado por recomendación`) ||
-      isKO(p.tipo == "Ático",  `${p.id} descartado por ${p.tipo}`) ||
-      isKO(p.num_planta<2,     `${p.id} descartado por planta ${p.planta}`) ||
+      isKO(p.novedad === false, `${p.id} descartado por recomendación`) ||
+      isKO(p.tipo == "Ático",   `${p.id} descartado por ${p.tipo}`) ||
+      isKO(p.num_planta<2,      `${p.id} descartado por planta ${p.planta}`) ||
       isKO(p.isAlquiler && p.precio>=1200 && p.mcuad<=70 && p.habit<=2,
-                               `${p.id} descartado por caro y pequeño`) ||
-      isKO(PARSER.isDone(p.id),`${p.id} descartado por visto`)
+                                `${p.id} descartado por caro y pequeño`) ||
+      isKO(PARSER.isDone(p.id), `${p.id} descartado por visto`)
     )
   );
   sendAds(ads);
