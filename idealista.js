@@ -1,20 +1,18 @@
-let HM = gHM();
 DEF_SEARCH='is:unread AND from:noresponder@avisos.idealista.com AND subject:("Nuevos anuncios hoy" OR "Nuevo piso en tu búsqueda" OR "Bajada de precio en tu búsqueda")';
 DEF_SRDONE='is:read subject:"[idealista] anuncios" has:attachment from:me'
 
 function run(search, s_done) {
-  if (1<HM && HM<7) {
+  if (1<Util.HM && Util.HM<7) {
     console.log("Estas no son horas");
     return;
   }
-  GmailApp.get
   if (typeof search != "string") search=DEF_SEARCH;
   if (typeof s_done != "string") s_done=DEF_SRDONE;
   let PARSER = new Parser(search, s_done);
   if (PARSER.msg.ko.length) {
     let mids = PARSER.msg.ko.map(m=>m.getId());
     Mail.send({
-      to: ENV("KO_TO"),
+      to: Util.prop("KO_TO"),
       subject: "[idealista] ERROR",
       body: [search].concat(mids)
     });
@@ -22,10 +20,12 @@ function run(search, s_done) {
   }
 
   let ads = PARSER.ads.filter(p => !(
-      isKO(p.novedad !== true, `${p.id} Descartado por recomendación`) ||
-      isKO(p.tipo == "Ático",  `${p.id} Descartado por ${p.tipo}`) ||
-      isKO(p.num_planta<2,     `${p.id} Descartado por planta ${p.planta}`) ||
-      isKO(PARSER.isDone(p.id),`${p.id} Descartado por visto`)
+      isKO(p.novedad !== true, `${p.id} descartado por recomendación`) ||
+      isKO(p.tipo == "Ático",  `${p.id} descartado por ${p.tipo}`) ||
+      isKO(p.num_planta<2,     `${p.id} descartado por planta ${p.planta}`) ||
+      isKO(p.isAlquiler && p.precio>=1200 && p.mcuad<=70 && p.habit<=2,
+                               `${p.id} descartado por caro y pequeño`) ||
+      isKO(PARSER.isDone(p.id),`${p.id} descartado por visto`)
     )
   );
   sendAds(ads);
@@ -55,23 +55,14 @@ function sendAds(ads) {
     ${p.planta}ª planta (${p.tipo})
   `).join("\n");
   Mail.send({
-    to: ENV("OK_TO"),
+    to: Util.prop("OK_TO"),
     subject: "[idealista] anuncios",
-    cc: ENV("OK_CC"),
-    bcc: ENV("OK_BCC"),
+    cc: Util.prop("OK_CC"),
+    bcc: Util.prop("OK_BCC"),
     body: textBody,
     htmlBody: htmlBody,
     attachments: {"pisos": ads}
   });
-}
-
-function gHM() {
-  let d = new Date();
-  return d.getHours()+(d.getMinutes()/100);
-}
-
-function ENV(key) {
-  return PropertiesService.getScriptProperties().getProperty(key);
 }
 
 function _debug() {
