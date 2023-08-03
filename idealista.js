@@ -1,5 +1,5 @@
-DEF_SEARCH='is:unread AND from:noresponder@avisos.idealista.com AND subject:("Nuevos anuncios hoy" OR "Nuevo piso en tu búsqueda" OR "Bajada de precio en tu búsqueda")';
-DEF_SRDONE='is:read subject:"[idealista] anuncios" has:attachment from:me'
+DEF_SEARCH='is:unread AND from:noresponder@avisos.idealista.com AND subject:("Nuevos anuncios hoy" OR "Nuevo piso en tu búsqueda" OR "Nuevo duplex en tu búsqueda" OR "Nuevo ático en tu búsqueda" OR "Bajada de precio en tu búsqueda")';
+DEF_SRDONE='subject:"[idealista] anuncios" has:attachment from:me'
 
 function run(search, s_done) {
   if (1<Util.HM && Util.HM<7) {
@@ -11,7 +11,7 @@ function run(search, s_done) {
   let PARSER = new Parser(search, s_done);
   if (PARSER.msg.ko.length) {
     let mids = PARSER.msg.ko.map(m=>m.getId());
-    Mail.send({
+    GMail.send({
       to: Util.prop("KO_TO"),
       subject: "[idealista] ERROR",
       body: [search].concat(mids)
@@ -20,16 +20,16 @@ function run(search, s_done) {
   }
 
   let ads = PARSER.ads.filter(p => !(
-      isKO(p.novedad === false, `${p.id} descartado por recomendación`) ||
-      isKO(p.tipo == "Ático",   `${p.id} descartado por ${p.tipo}`) ||
-      isKO(p.num_planta<2,      `${p.id} descartado por planta ${p.planta}`) ||
+      isKO(p.novedad !== true, `${p.id} descartado por recomendación`) ||
+      isKO(p.tipo == "Ático",  `${p.id} descartado por ${p.tipo}`) ||
+      isKO(p.num_planta<2,     `${p.id} descartado por planta ${p.planta}`) ||
       isKO(p.isAlquiler && p.precio>=1200 && p.mcuad<=70 && p.habit<=2,
-                                `${p.id} descartado por caro y pequeño`) ||
-      isKO(PARSER.isDone(p.id), `${p.id} descartado por visto`)
+                               `${p.id} descartado por caro y pequeño`) ||
+      isKO(PARSER.isDone(p.id),`${p.id} descartado por visto`)
     )
   );
   sendAds(ads);
-  GmailApp.markMessagesRead(PARSER.msg.ok);
+  GMail.markRead(PARSER.msg.ok);
 }
 
 function isKO(ko, msg) {
@@ -54,7 +54,7 @@ function sendAds(ads) {
     ${p.habit} hab, ${p.mcuad} m²
     ${p.planta}ª planta (${p.tipo})
   `).join("\n");
-  Mail.send({
+  GMail.send({
     to: Util.prop("OK_TO"),
     subject: "[idealista] anuncios",
     cc: Util.prop("OK_CC"),
@@ -66,7 +66,7 @@ function sendAds(ads) {
 }
 
 function _debug() {
-  //run('in:all AND from:noresponder@avisos.idealista.com AND subject:("Nuevos anuncios hoy")')
+  run('from:noresponder@avisos.idealista.com AND subject:("Nuevos anuncios hoy" OR "Nuevo piso en tu búsqueda" OR "Nuevo duplex en tu búsqueda" OR "Nuevo ático en tu búsqueda" OR "Bajada de precio en tu búsqueda")');
   //let ads = get_ads('from:noresponder@avisos.idealista.com AND subject:("Nuevos anuncios hoy") AND after:2023/05/27 before:2023/05/29 ');
   //console.log(ads);
 }
